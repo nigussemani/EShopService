@@ -9,7 +9,7 @@ public class CatalogInitialData : IInitialData
         using var session = store.LightweightSession();
         if (await session.Query<Product>().AnyAsync())
         {
-                     return;
+           return;
         }
 
         //Marten UPSERT operation to insert initial data
