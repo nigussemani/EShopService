@@ -24,6 +24,9 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("CatalogDbConnection")!, name: "CatalogDbConnection");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -31,5 +34,10 @@ app.MapCarter();
 
 //Global exception handling middleware
 app.UseExceptionHandler(options => { });
+
+app.UseHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.Run();
