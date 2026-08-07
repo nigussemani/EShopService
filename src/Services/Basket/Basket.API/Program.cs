@@ -1,8 +1,12 @@
+using Discount.Grpc;
 using HealthChecks.UI.Client;
+
+// Required to let Grpc.Net.Client call the Discount.Grpc service over plaintext HTTP/2 (h2c) in-cluster.
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add Application services
 builder.Services.AddCarter();
 
 var assembly = typeof(Program).Assembly;
@@ -16,9 +20,7 @@ builder.Services.AddMediatR(cfg =>
 //for the fluent validation
 builder.Services.AddValidatorsFromAssembly(assembly);
 
-builder.Services.AddExceptionHandler<CustomExceptionHandler>();
-
-//Add Marten
+//Data Services
 builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("Database")!);
@@ -33,6 +35,15 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
 
+//Grpc services
+builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>(options =>
+{
+    options.Address = new Uri(builder.Configuration["GrpcSettings:DiscountUrl"]!);
+}
+);
+
+// Cross-Cutting Services
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
     .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
